@@ -1,0 +1,40 @@
+const API_KEY = "TU-KEY-AQUI";
+
+// Archivos que vas a enviar
+const FILES = {
+  "x-shader": "x-shader.txt",
+  "assetindexer-v3": "assetindexer-v3.txt"
+};
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const route = url.pathname.replace("/", "");
+
+    const key = request.headers.get("X-API-KEY");
+
+    // Validación de key
+    if (key !== API_KEY) {
+      return new Response("Forbidden", { status: 403 });
+    }
+
+    // Ver si el archivo existe
+    if (!FILES[route]) {
+      return new Response("Not found", { status: 404 });
+    }
+
+    // Obtener archivo desde R2 Storage
+    const object = await env.MY_BUCKET.get(FILES[route]);
+
+    if (!object) {
+      return new Response("File missing", { status: 500 });
+    }
+
+    return new Response(object.body, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/octet-stream"
+      }
+    });
+  }
+}
